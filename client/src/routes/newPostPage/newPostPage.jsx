@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from 'react-router-dom'
 import "./newPostPage.scss";
 import ReactQuill from 'react-quill';
 import "react-quill/dist/quill.snow.css";
@@ -9,12 +10,12 @@ function NewPostPage() {
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
   const [images, setImages] = useState([]);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const inputs = Object.fromEntries(formData);
-    console.log(inputs);
 
     try {
       const res = await apiRequest.post("/posts", {
@@ -42,7 +43,7 @@ function NewPostPage() {
           restaurant: parseInt(inputs.restaurant)
         }
       });
-      
+      navigate(`/${res.data.id}`);
     } catch (error) {
       console.log(error)
       setError(error)

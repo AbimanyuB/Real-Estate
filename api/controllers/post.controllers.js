@@ -1,9 +1,24 @@
 import prisma from "../lib/prisma.js";
+import jwt from "jsonwebtoken";
 import bcyrpt from "bcrypt";
 
 export const getPosts = async (req, res) => {
+  const query = req.query;
+  console.log(req.query);
   try {
-    const posts = await prisma.post.findMany();
+    const posts = await prisma.post.findMany({
+      where: {
+        city: query.city || undefined,
+        type: query.type || undefined,
+        property: query.property || undefined,
+        bedroom: parseInt(query.bedroom) || undefined,
+        price:{
+          gte: parseInt(query.minPrice) || 0,
+          lte: parseInt(query.maxPrice) || 1000000000,
+        }
+      }
+    });
+    console.log(posts)
     res.status(200).json(posts);
   } catch (error) {
     console.log(error);
@@ -26,7 +41,26 @@ export const getPost = async (req, res) => {
         },
       }
     });
-    res.status(200).json(post);
+
+    const token = req.cookies?.token;
+
+    if (token) {
+      jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, payload) => {
+        if (err) {
+          return res.status(401).json({ message: "Token is not valid"});
+        } else {
+          const saved = await prisma.savedPost.findUnique({
+            where: {
+              userId_postId: {
+                userId: payload.id,
+                postId: id
+              }
+            }
+          })
+          res.status(200).json({...post, isSaved: saved ? true : false});
+        }
+      })
+    }
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Failed to get Post" });
